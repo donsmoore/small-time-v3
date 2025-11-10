@@ -10,6 +10,9 @@ echo "🚀 Starting deployment..."
 # Navigate to application directory
 cd /var/www/html/donsmoore.com/timeclock/v3
 
+# Fix Git ownership issue (if needed)
+git config --global --add safe.directory /var/www/html/donsmoore.com/timeclock/v3
+
 # Pull latest changes from GitHub
 echo "📥 Pulling latest changes from GitHub..."
 git pull origin main

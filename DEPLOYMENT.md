@@ -58,8 +58,12 @@ sudo chown -R $USER:$USER /var/www/html/donsmoore.com/timeclock/v3
 cd /var/www/html/donsmoore.com/timeclock/v3
 git clone https://github.com/donsmoore/small-time-v3.git .
 
+# Fix Git ownership issue (if you get "dubious ownership" errors)
+git config --global --add safe.directory /var/www/html/donsmoore.com/timeclock/v3
+
 # Or if using SSH:
 # git clone git@github.com:donsmoore/small-time-v3.git .
+# git config --global --add safe.directory /var/www/html/donsmoore.com/timeclock/v3
 ```
 
 ### 4. Configure Environment
@@ -214,6 +218,17 @@ To update the application after making changes:
    ```
 
 ## Troubleshooting
+
+### Git Ownership Issues
+If you get "dubious ownership" errors when running git commands:
+
+```bash
+# Add the directory as a safe directory
+git config --global --add safe.directory /var/www/html/donsmoore.com/timeclock/v3
+
+# Or if running as different user (e.g., www-data), add it for that user:
+sudo -u www-data git config --global --add safe.directory /var/www/html/donsmoore.com/timeclock/v3
+```
 
 ### Permission Issues
 ```bash
