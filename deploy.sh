@@ -10,7 +10,10 @@ echo "🚀 Starting deployment..."
 # Navigate to application directory
 cd /var/www/html/donsmoore.com/timeclock/v3
 
-# Fix Git ownership issue (if needed)
+# Fix Git ownership and permissions (if needed)
+echo "🔧 Fixing Git permissions..."
+CURRENT_USER=$(whoami)
+sudo chown -R $CURRENT_USER:$CURRENT_USER .git
 git config --global --add safe.directory /var/www/html/donsmoore.com/timeclock/v3
 
 # Pull latest changes from GitHub

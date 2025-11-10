@@ -220,14 +220,27 @@ To update the application after making changes:
 ## Troubleshooting
 
 ### Git Ownership Issues
-If you get "dubious ownership" errors when running git commands:
+If you get "dubious ownership" or "insufficient permission" errors when running git commands:
 
 ```bash
-# Add the directory as a safe directory
+cd /var/www/html/donsmoore.com/timeclock/v3
+
+# Fix ownership of .git directory
+CURRENT_USER=$(whoami)
+sudo chown -R $CURRENT_USER:$CURRENT_USER .git
+
+# Add as safe directory
 git config --global --add safe.directory /var/www/html/donsmoore.com/timeclock/v3
 
-# Or if running as different user (e.g., www-data), add it for that user:
-sudo -u www-data git config --global --add safe.directory /var/www/html/donsmoore.com/timeclock/v3
+# Now git pull should work
+git pull origin main
+```
+
+**Note:** After fixing Git permissions, you may need to restore file ownership for the web server:
+```bash
+# After git operations, restore ownership for web files
+sudo chown -R www-data:www-data /var/www/html/donsmoore.com/timeclock/v3
+sudo chown -R $USER:$USER .git  # Keep .git owned by your user
 ```
 
 ### Permission Issues
