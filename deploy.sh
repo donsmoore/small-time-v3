@@ -13,12 +13,18 @@ cd /var/www/html/donsmoore.com/timeclock/v3
 # Fix Git ownership and permissions (if needed)
 echo "🔧 Fixing Git permissions..."
 CURRENT_USER=$(whoami)
-sudo chown -R $CURRENT_USER:$CURRENT_USER .git
+# Fix ownership of entire directory temporarily for git operations
+sudo chown -R $CURRENT_USER:$CURRENT_USER .
 git config --global --add safe.directory /var/www/html/donsmoore.com/timeclock/v3
 
 # Pull latest changes from GitHub
 echo "📥 Pulling latest changes from GitHub..."
 git pull origin main
+
+# Restore ownership for web server (but keep .git owned by current user for future pulls)
+echo "🔐 Restoring file ownership..."
+sudo chown -R www-data:www-data .
+sudo chown -R $CURRENT_USER:$CURRENT_USER .git
 
 # Install/update PHP dependencies
 echo "📦 Installing PHP dependencies..."
@@ -50,6 +56,9 @@ php artisan view:cache
 echo "🔐 Setting permissions..."
 sudo chown -R www-data:www-data storage bootstrap/cache
 sudo chmod -R 775 storage bootstrap/cache
+
+# Ensure .git remains owned by current user for future pulls
+sudo chown -R $CURRENT_USER:$CURRENT_USER .git
 
 echo "✅ Deployment complete!"
 

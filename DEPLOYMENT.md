@@ -225,22 +225,19 @@ If you get "dubious ownership" or "insufficient permission" errors when running 
 ```bash
 cd /var/www/html/donsmoore.com/timeclock/v3
 
-# Fix ownership of .git directory
+# Fix ownership of entire directory temporarily for git operations
 CURRENT_USER=$(whoami)
-sudo chown -R $CURRENT_USER:$CURRENT_USER .git
+sudo chown -R $CURRENT_USER:$CURRENT_USER .
 
 # Add as safe directory
 git config --global --add safe.directory /var/www/html/donsmoore.com/timeclock/v3
 
 # Now git pull should work
 git pull origin main
-```
 
-**Note:** After fixing Git permissions, you may need to restore file ownership for the web server:
-```bash
 # After git operations, restore ownership for web files
-sudo chown -R www-data:www-data /var/www/html/donsmoore.com/timeclock/v3
-sudo chown -R $USER:$USER .git  # Keep .git owned by your user
+sudo chown -R www-data:www-data .
+sudo chown -R $CURRENT_USER:$CURRENT_USER .git  # Keep .git owned by your user
 ```
 
 ### Permission Issues
