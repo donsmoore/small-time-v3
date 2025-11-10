@@ -105,6 +105,10 @@ sudo chmod -R 775 storage bootstrap/cache
 ### 7. Configure Apache
 
 ```bash
+# Enable required Apache modules
+sudo a2enmod rewrite
+sudo a2enmod headers  # Optional: for security headers
+
 # Copy the Apache configuration
 sudo cp apache-config.conf /etc/apache2/sites-available/donsmoore-timeclock-v3.conf
 
