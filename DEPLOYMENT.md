@@ -132,7 +132,22 @@ sudo systemctl restart apache2
 
 ```bash
 cd /var/www/html/donsmoore.com/timeclock/v3
+
+# Check migration status first
+php artisan migrate:status
+
+# If tables already exist, you have two options:
+
+# Option 1: Mark migrations as run without executing them (if tables already exist)
+# php artisan migrate --pretend  # See what would run
+# Then manually mark migrations as run in the migrations table
+
+# Option 2: Run migrations (will fail if tables exist, but safe to ignore if structure matches)
 php artisan migrate --force
+
+# If you get "table already exists" errors but the tables are correct, you can:
+# 1. Check if migrations table exists and mark migrations as run manually, OR
+# 2. Skip the migration step if your database structure is already correct
 ```
 
 ### 9. Generate Application Key (if needed)
@@ -253,10 +268,26 @@ nvm alias default 20
 node --version
 ```
 
-### Database Connection Issues
-- Check `.env` file has correct database credentials
-- Ensure database server is running
-- Verify database user has proper permissions
+### Database Migration Errors
+If you get "table already exists" errors:
+
+```bash
+# Check migration status
+php artisan migrate:status
+
+# If tables already exist and have the correct structure, you can:
+# Option 1: Mark specific migrations as run (if they match your existing tables)
+# Access your database and insert records into the migrations table:
+# INSERT INTO migrations (migration, batch) VALUES ('2025_11_06_093749_create_clock_groups_table', 1);
+# INSERT INTO migrations (migration, batch) VALUES ('2025_11_06_093753_create_clock_users_table', 1);
+# INSERT INTO migrations (migration, batch) VALUES ('2025_11_06_093800_create_clock_events_table', 1);
+
+# Option 2: Skip migrations if your database structure is already correct
+# The application will work fine if tables exist with the correct structure
+
+# Option 3: Fresh start (WARNING: This will delete all data!)
+# php artisan migrate:fresh --force
+```
 
 ## Security Considerations
 
