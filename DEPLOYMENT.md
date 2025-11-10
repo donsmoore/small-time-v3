@@ -153,7 +153,15 @@ php artisan migrate --force
 ### 9. Generate Application Key (if needed)
 
 ```bash
+# Make sure .env file is writable
+sudo chown $USER:www-data /var/www/html/donsmoore.com/timeclock/v3/.env
+chmod 664 /var/www/html/donsmoore.com/timeclock/v3/.env
+
+# Generate application key
 php artisan key:generate
+
+# After generating, secure the .env file
+chmod 640 /var/www/html/donsmoore.com/timeclock/v3/.env
 ```
 
 ### 10. Cache Configuration
@@ -209,8 +217,18 @@ To update the application after making changes:
 
 ### Permission Issues
 ```bash
+# Fix ownership of application files
 sudo chown -R www-data:www-data /var/www/html/donsmoore.com/timeclock/v3
+
+# Make storage and cache writable
 sudo chmod -R 775 storage bootstrap/cache
+
+# Make .env writable temporarily for key generation
+sudo chown $USER:www-data /var/www/html/donsmoore.com/timeclock/v3/.env
+chmod 664 /var/www/html/donsmoore.com/timeclock/v3/.env
+
+# After key generation, secure .env
+chmod 640 /var/www/html/donsmoore.com/timeclock/v3/.env
 ```
 
 ### Apache Not Serving Laravel Routes
