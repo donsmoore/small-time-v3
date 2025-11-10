@@ -79,7 +79,7 @@ nano .env
 Update the following in `.env`:
 - `APP_ENV=production`
 - `APP_DEBUG=false`
-- `APP_URL=https://donsmoore.com/timeclock/v3` (or your domain)
+- `APP_URL=https://donsmoore.com/timeclock/v3` (or your domain with subdirectory)
 - Database credentials
 - Any other environment-specific settings
 
