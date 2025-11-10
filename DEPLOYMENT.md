@@ -6,7 +6,7 @@ This guide will help you deploy SmallTime v3 to your AWS EC2 server at `donsmoor
 
 - AWS EC2 instance running Ubuntu/Debian
 - Apache 2 web server
-- PHP 8.2 or higher
+- PHP 8.3 or higher (8.3.6 recommended)
 - Composer installed
 - Node.js and npm installed
 - Git installed
@@ -27,7 +27,7 @@ ssh -i /path/to/your-key.pem ubuntu@your-ec2-ip
 sudo apt update && sudo apt upgrade -y
 
 # Install PHP and required extensions
-sudo apt install -y php8.2 php8.2-cli php8.2-common php8.2-mysql php8.2-zip php8.2-gd php8.2-mbstring php8.2-curl php8.2-xml php8.2-bcmath
+sudo apt install -y php8.3 php8.3-cli php8.3-common php8.3-mysql php8.3-zip php8.3-gd php8.3-mbstring php8.3-curl php8.3-xml php8.3-bcmath
 
 # Install Composer
 curl -sS https://getcomposer.org/installer | php
