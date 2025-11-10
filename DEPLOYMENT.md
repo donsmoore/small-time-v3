@@ -8,7 +8,7 @@ This guide will help you deploy SmallTime v3 to your AWS EC2 server at `donsmoor
 - Apache 2 web server
 - PHP 8.3 or higher (8.3.6 recommended)
 - Composer installed
-- Node.js and npm installed
+- Node.js 20.19+ or 22.12+ (required for Vite 7)
 - Git installed
 - SSH access to your EC2 instance
 
@@ -33,9 +33,13 @@ sudo apt install -y php8.3 php8.3-cli php8.3-common php8.3-mysql php8.3-zip php8
 curl -sS https://getcomposer.org/installer | php
 sudo mv composer.phar /usr/local/bin/composer
 
-# Install Node.js and npm
+# Install Node.js and npm (version 20.x LTS)
 curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
 sudo apt install -y nodejs
+
+# Verify Node.js version (should be 20.19+ or 22.12+)
+node --version
+npm --version
 
 # Install Apache and enable mod_rewrite
 sudo apt install -y apache2
@@ -199,6 +203,35 @@ sudo chmod -R 775 storage bootstrap/cache
 - Run `npm run build` to rebuild assets
 - Check `public/build` directory exists and has files
 - Verify file permissions
+
+### Node.js Version Too Old
+If you get an error that Node.js version is too old (Vite 7 requires 20.19+ or 22.12+):
+
+```bash
+# Remove old Node.js version
+sudo apt remove nodejs npm -y
+sudo apt autoremove -y
+
+# Install Node.js 20.x LTS
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+sudo apt install -y nodejs
+
+# Verify the version (should be 20.19+ or 22.12+)
+node --version
+
+# If still showing old version, you may need to use nvm instead:
+# Install nvm (Node Version Manager)
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
+source ~/.bashrc
+
+# Install Node.js 20.x using nvm
+nvm install 20
+nvm use 20
+nvm alias default 20
+
+# Verify
+node --version
+```
 
 ### Database Connection Issues
 - Check `.env` file has correct database credentials
