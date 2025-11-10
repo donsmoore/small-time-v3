@@ -207,6 +207,19 @@ sudo chmod -R 775 storage bootstrap/cache
 ### Node.js Version Too Old
 If you get an error that Node.js version is too old (Vite 7 requires 20.19+ or 22.12+):
 
+**First, fix any broken apt repositories (if you get repository errors):**
+
+```bash
+# Remove broken certbot PPA if it exists
+sudo rm -f /etc/apt/sources.list.d/certbot-ubuntu-certbot-*.list
+sudo rm -f /etc/apt/sources.list.d/certbot-ubuntu-certbot-*.sources
+
+# Update apt
+sudo apt update
+```
+
+**Then upgrade Node.js:**
+
 ```bash
 # Remove old Node.js version
 sudo apt remove nodejs npm -y
@@ -218,8 +231,11 @@ sudo apt install -y nodejs
 
 # Verify the version (should be 20.19+ or 22.12+)
 node --version
+```
 
-# If still showing old version, you may need to use nvm instead:
+**If the NodeSource script still fails, use nvm instead:**
+
+```bash
 # Install nvm (Node Version Manager)
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
 source ~/.bashrc
