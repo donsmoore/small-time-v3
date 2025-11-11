@@ -355,6 +355,124 @@ php artisan migrate:status
 
 3. Auto-renewal is set up automatically
 
+## Migrating Data from Local to Server
+
+To transfer your local database data to the production server:
+
+### Option 1: Export/Import SQL Dump (Recommended)
+
+**On your local machine:**
+
+```bash
+# Export all data from your local database
+mysqldump -u your_local_db_user -p your_local_database_name \
+  clockGroup clockUser clockEvent migrations \
+  > timeclock_data.sql
+
+# Or export everything (including structure):
+mysqldump -u your_local_db_user -p your_local_database_name \
+  > timeclock_full.sql
+```
+
+**On your AWS EC2 server:**
+
+```bash
+# Copy the SQL file to your server (using SCP or SFTP)
+# scp timeclock_data.sql user@your-server:/tmp/
+
+# Or if you have the file locally on the server, import it:
+cd /var/www/html/donsmoore.com/timeclock/v3
+mysql -u your_production_db_user -p your_production_database_name < timeclock_data.sql
+```
+
+### Option 2: Export Specific Tables
+
+**On your local machine:**
+
+```bash
+# Export companies (clockGroup)
+mysqldump -u your_local_db_user -p your_local_database_name clockGroup > companies.sql
+
+# Export users (clockUser)
+mysqldump -u your_local_db_user -p your_local_database_name clockUser > users.sql
+
+# Export events (clockEvent)
+mysqldump -u your_local_db_user -p your_local_database_name clockEvent > events.sql
+
+# Export migrations table (to keep migration state in sync)
+mysqldump -u your_local_db_user -p your_local_database_name migrations > migrations.sql
+```
+
+**On your server, import each:**
+
+```bash
+mysql -u your_production_db_user -p your_production_database_name < companies.sql
+mysql -u your_production_db_user -p your_production_database_name < users.sql
+mysql -u your_production_db_user -p your_production_database_name < events.sql
+mysql -u your_production_db_user -p your_production_database_name < migrations.sql
+```
+
+### Option 3: Using Laravel Tinker (for small datasets)
+
+**On your local machine:**
+
+```bash
+php artisan tinker
+```
+
+```php
+// Export companies
+$companies = DB::table('clockGroup')->get();
+file_put_contents('companies.json', json_encode($companies));
+
+// Export users
+$users = DB::table('clockUser')->get();
+file_put_contents('users.json', json_encode($users));
+
+// Export events
+$events = DB::table('clockEvent')->get();
+file_put_contents('events.json', json_encode($events));
+```
+
+**On your server:**
+
+```bash
+php artisan tinker
+```
+
+```php
+// Import companies
+$companies = json_decode(file_get_contents('companies.json'), true);
+foreach ($companies as $company) {
+    DB::table('clockGroup')->insert((array)$company);
+}
+
+// Import users
+$users = json_decode(file_get_contents('users.json'), true);
+foreach ($users as $user) {
+    DB::table('clockUser')->insert((array)$user);
+}
+
+// Import events
+$events = json_decode(file_get_contents('events.json'), true);
+foreach ($events as $event) {
+    DB::table('clockEvent')->insert((array)$event);
+}
+```
+
+### Option 4: Using SQL Scripts (if you have seed scripts)
+
+If you have SQL seed scripts (like `seed_fortune500_companies.sql` and `seed_100_users.sql`):
+
+```bash
+# On your server
+cd /var/www/html/donsmoore.com/timeclock/v3
+mysql -u your_production_db_user -p your_production_database_name < database/seed_fortune500_companies.sql
+mysql -u your_production_db_user -p your_production_database_name < database/seed_100_users.sql
+```
+
+**Note:** Make sure your production database credentials are correct in `.env` before importing.
+
 ## Support
 
 For issues or questions, please open an issue on GitHub: https://github.com/donsmoore/small-time-v3
