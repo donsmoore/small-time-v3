@@ -45,6 +45,7 @@ export default {
     create: (data) => apiClient.post('/users', data),
     update: (id, data) => apiClient.put(`/users/${id}`, data),
     delete: (id) => apiClient.delete(`/users/${id}`),
+    getNameColumnWidth: () => apiClient.get('/users/column-width/name'),
   },
   groups: {
     getAll: () => apiClient.get('/groups'),

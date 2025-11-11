@@ -23,6 +23,7 @@ Route::prefix('v1')->group(function () {
     
     // Users CRUD
     Route::apiResource('users', UserController::class);
+    Route::get('/users/column-width/name', [UserController::class, 'getNameColumnWidth']);
     
     // Groups CRUD
     Route::apiResource('groups', GroupController::class);

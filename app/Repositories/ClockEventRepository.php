@@ -55,6 +55,19 @@ class ClockEventRepository
             ->latest('eventTime')
             ->first();
     }
+
+    /**
+     * Get the earliest event for a user
+     *
+     * @param int $userId
+     * @return ClockEvent|null
+     */
+    public function getEarliestEventForUser(int $userId): ?ClockEvent
+    {
+        return ClockEvent::where('userId', $userId)
+            ->oldest('eventTime')
+            ->first();
+    }
     
     /**
      * Create a new clock event

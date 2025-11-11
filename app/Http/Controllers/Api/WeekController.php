@@ -64,6 +64,18 @@ class WeekController extends Controller
         $eventBeforeWeekStart = $this->eventRepository->getEventBeforeDate($userId, $weekStart);
         $eventAfterWeekEnd = $this->eventRepository->getEventAfterDate($userId, $weekEnd);
 
+        // Determine earliest and latest weeks with activity
+        $earliestEvent = $this->eventRepository->getEarliestEventForUser($userId);
+        $latestEvent = $this->eventRepository->getLatestEventForUser($userId);
+
+        $earliestWeekStart = $earliestEvent
+            ? $this->weekTimeService->calculateWorkWeekStart($earliestEvent->eventTime, $weekStartDOW, $weekStartTime)
+            : $weekStart;
+
+        $latestWeekStart = $latestEvent
+            ? $this->weekTimeService->calculateWorkWeekStart($latestEvent->eventTime, $weekStartDOW, $weekStartTime)
+            : $weekStart;
+
         return response()->json([
             'data' => [
                 'userId' => $userId,
@@ -77,6 +89,8 @@ class WeekController extends Controller
                 'events' => $events,
                 'eventBeforeWeekStart' => $eventBeforeWeekStart,
                 'eventAfterWeekEnd' => $eventAfterWeekEnd,
+                'earliestWeekStartDateTime' => $earliestWeekStart,
+                'latestWeekStartDateTime' => $latestWeekStart,
             ],
         ]);
     }

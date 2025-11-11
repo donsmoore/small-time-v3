@@ -1,23 +1,25 @@
 <template>
   <div class="groups">
     <div class="actions">
-      <button id="add-company-btn" name="add-company-btn" @click="openAddForm">Add Company</button>
-      <div class="pagination-arrows">
-        <button class="pagination-arrow" @click="goToFirstPage" :disabled="currentPage === 1">
-          <span>«</span>
-        </button>
-        <button class="pagination-arrow" @click="goToPrevPage" :disabled="currentPage === 1">
-          <span>‹</span>
-        </button>
-        <div class="page-info-wrapper">
-          <span class="page-info">Page {{ currentPage }} of {{ totalPages }}</span>
+      <div class="companyDiv">
+        <button id="add-company-btn" name="add-company-btn" @click="openAddForm">Add Company</button>
+        <div class="pagination-arrows">
+          <button class="pagination-arrow" @click="goToFirstPage" :disabled="currentPage === 1">
+            <span>«</span>
+          </button>
+          <button class="pagination-arrow" @click="goToPrevPage" :disabled="currentPage === 1">
+            <span>‹</span>
+          </button>
+          <div class="page-info-wrapper">
+            <span class="page-info">Page {{ currentPage }} of {{ totalPages }}</span>
+          </div>
+          <button class="pagination-arrow" @click="goToNextPage" :disabled="currentPage === totalPages">
+            <span>›</span>
+          </button>
+          <button class="pagination-arrow" @click="goToLastPage" :disabled="currentPage === totalPages">
+            <span>»</span>
+          </button>
         </div>
-        <button class="pagination-arrow" @click="goToNextPage" :disabled="currentPage === totalPages">
-          <span>›</span>
-        </button>
-        <button class="pagination-arrow" @click="goToLastPage" :disabled="currentPage === totalPages">
-          <span>»</span>
-        </button>
       </div>
     </div>
 
@@ -1014,6 +1016,26 @@ export default {
   width: 170px;
 }
 
+.actions > button,
+.companyDiv > button {
+  width: 170px;
+  height: 36px;
+  padding: 8px 16px;
+  line-height: 1.2;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.companyDiv {
+  display: inline-flex;
+  align-items: center;
+  gap: 20px;
+  border: 0;
+  padding: 0;
+}
+
 .pagination-arrows {
   display: flex;
   gap: 5px;
@@ -1058,10 +1080,12 @@ export default {
   color: white;
   font-size: 20px;
   line-height: 1;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   min-width: 40px;
+  height: 36px;
+  box-sizing: border-box;
 }
 
 .pagination-arrow:hover:not(:disabled) {

@@ -1,33 +1,35 @@
 <template>
   <div class="users">
     <div class="actions">
-      <button id="add-user-btn" name="add-user-btn" @click="openAddForm">Add User</button>
-      <div class="pagination-arrows">
-        <button class="pagination-arrow" @click="goToFirstPage" :disabled="currentPage === 1">
-          <span>«</span>
-        </button>
-        <button class="pagination-arrow" @click="goToPrevPage" :disabled="currentPage === 1">
-          <span>‹</span>
-        </button>
-        <div class="page-info-wrapper">
-          <span class="page-info">Page {{ currentPage }} of {{ totalPages }}</span>
+      <div class="userDiv">
+        <button id="add-user-btn" name="add-user-btn" @click="openAddForm">Add User</button>
+        <div class="pagination-arrows">
+          <button class="pagination-arrow" @click="goToFirstPage" :disabled="currentPage === 1">
+            <span>«</span>
+          </button>
+          <button class="pagination-arrow" @click="goToPrevPage" :disabled="currentPage === 1">
+            <span>‹</span>
+          </button>
+          <div class="page-info-wrapper">
+            <span class="page-info">Page {{ currentPage }} of {{ totalPages }}</span>
+          </div>
+          <button class="pagination-arrow" @click="goToNextPage" :disabled="currentPage === totalPages">
+            <span>›</span>
+          </button>
+          <button class="pagination-arrow" @click="goToLastPage" :disabled="currentPage === totalPages">
+            <span>»</span>
+          </button>
         </div>
-        <button class="pagination-arrow" @click="goToNextPage" :disabled="currentPage === totalPages">
-          <span>›</span>
-        </button>
-        <button class="pagination-arrow" @click="goToLastPage" :disabled="currentPage === totalPages">
-          <span>»</span>
-        </button>
-      </div>
-      <div class="company-filter">
-        <label for="company-filter-select">Company:</label>
-        <select id="company-filter-select" v-model="selectedCompany" @change="onCompanyFilterChange">
-          <option value="all">All</option>
-          <option v-for="group in sortedGroups" :key="group.id" :value="group.id">
-            {{ group.groupName }}
-          </option>
-        </select>
-        <button id="company-filter-btn" name="company-filter-btn" class="company-filter-btn" title="View all companies" @click="resetCompanyFilter"><></button>
+        <div class="company-filter">
+          <label for="company-filter-select">Company:</label>
+          <select id="company-filter-select" v-model="selectedCompany" @change="onCompanyFilterChange">
+            <option value="all">All</option>
+            <option v-for="group in sortedGroups" :key="group.id" :value="group.id">
+              {{ group.groupName }}
+            </option>
+          </select>
+          <button id="company-filter-btn" name="company-filter-btn" class="company-filter-btn" title="View all companies" @click="resetCompanyFilter"><></button>
+        </div>
       </div>
     </div>
 
@@ -91,8 +93,11 @@
         </div>
         <form @submit.prevent="saveUser">
           <div class="form-group">
-            <label for="user-name">Name:</label>
-            <input id="user-name" name="user-name" ref="nameInput" v-model="formData.name" required />
+            <label for="user-name" class="label-with-error">
+              Name:
+              <span v-if="nameError" class="user-name-error">{{ nameError }}</span>
+            </label>
+            <input id="user-name" name="user-name" ref="nameInput" v-model="formData.name" @input="handleNameInput" required />
           </div>
           <div class="form-group">
             <div class="label-with-error">
@@ -166,6 +171,8 @@ export default {
     const itemsPerPage = ref(5)
     const selectedCompany = ref(route.query.companyId ? route.query.companyId : 'all')
     const userCodeError = ref('')
+    const nameError = ref('')
+    const MAX_USER_NAME_LENGTH = ref(30)
     
     // Drag functionality
     const addEditModalContent = ref(null)
@@ -291,6 +298,7 @@ export default {
       resetModalPositions()
       showAddForm.value = true
       userCodeError.value = ''
+      nameError.value = ''
     }
     
     const editUser = (user) => {
@@ -302,10 +310,20 @@ export default {
         groupId: user.groupId || 0,
       }
       userCodeError.value = ''
+      nameError.value = ''
+      handleNameInput()
     }
     
     const clearUserCodeError = () => {
       userCodeError.value = ''
+    }
+
+    const handleNameInput = () => {
+      if (formData.value.name && formData.value.name.length > MAX_USER_NAME_LENGTH.value) {
+        nameError.value = `Name can only be ${MAX_USER_NAME_LENGTH.value} characters wide`
+      } else {
+        nameError.value = ''
+      }
     }
 
     const viewUserWeek = (user) => {
@@ -338,6 +356,10 @@ export default {
     const saveUser = async () => {
       // Clear any previous error
       userCodeError.value = ''
+      handleNameInput()
+      if (nameError.value) {
+        return
+      }
       
       // Validate userCode uniqueness before saving
       const userCodeToCheck = formData.value.userCode?.trim()
@@ -545,6 +567,7 @@ export default {
         groupId: 0,
       }
       userCodeError.value = ''
+      nameError.value = ''
     }
 
     const handleEscapeKey = (event) => {
@@ -580,8 +603,18 @@ export default {
       document.removeEventListener('keydown', handleEscapeKey)
     })
 
+    const loadNameColumnWidth = async () => {
+      try {
+        const response = await api.users.getNameColumnWidth()
+        MAX_USER_NAME_LENGTH.value = response.data.width || 30
+      } catch (err) {
+        console.error('Error loading user name column width:', err)
+      }
+    }
+
     onMounted(async () => {
       await loadGroups()
+      await loadNameColumnWidth()
       loadUsers()
     })
 
@@ -628,6 +661,8 @@ export default {
       openAddForm,
       userCodeError,
       clearUserCodeError,
+      nameError,
+      handleNameInput,
       handleOverlayMouseDown
     }
   },
@@ -650,6 +685,26 @@ export default {
   width: 170px;
 }
 
+.actions > button,
+.userDiv > button {
+  width: 170px;
+  height: 36px;
+  padding: 8px 16px;
+  line-height: 1.2;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.userDiv {
+  display: inline-flex;
+  align-items: center;
+  gap: 20px;
+  border: 0;
+  padding: 0;
+}
+
 .company-filter {
   display: flex;
   align-items: center;
@@ -660,6 +715,7 @@ export default {
 .company-filter label {
   font-weight: bold;
   color: #333;
+  padding-left: 10px;
 }
 
 .company-filter select {
@@ -681,6 +737,10 @@ export default {
   cursor: pointer;
   min-width: auto;
   width: auto;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .company-filter-btn:hover {
@@ -731,10 +791,12 @@ export default {
   color: white;
   font-size: 20px;
   line-height: 1;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   min-width: 40px;
+  height: 36px;
+  box-sizing: border-box;
 }
 
 .pagination-arrow:hover:not(:disabled) {
@@ -1035,6 +1097,12 @@ button:hover {
 }
 
 .user-code-error {
+  color: #d32f2f;
+  font-size: 13px;
+  font-weight: normal;
+}
+
+.user-name-error {
   color: #d32f2f;
   font-size: 13px;
   font-weight: normal;

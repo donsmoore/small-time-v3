@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Repositories\ClockUserRepository;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class UserController extends Controller
 {
@@ -64,6 +65,24 @@ class UserController extends Controller
             'message' => 'User updated successfully.',
             'data' => $clockUser,
         ]);
+    }
+
+    public function getNameColumnWidth()
+    {
+        try {
+            $columnInfo = DB::select("SHOW COLUMNS FROM clockUser WHERE Field = 'name'");
+            if (empty($columnInfo)) {
+                return response()->json(['width' => 30], 200);
+            }
+
+            $type = $columnInfo[0]->Type;
+            preg_match('/\((\d+)\)/', $type, $matches);
+            $width = isset($matches[1]) ? (int) $matches[1] : 30;
+
+            return response()->json(['width' => $width]);
+        } catch (\Exception $e) {
+            return response()->json(['width' => 30], 200);
+        }
     }
 
     public function destroy($id)

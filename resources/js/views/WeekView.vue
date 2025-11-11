@@ -5,12 +5,62 @@
     <div v-else-if="weekData">
       <div class="week-header">
         <div class="week-navigation">
-          <button id="prev-week-btn" name="prev-week-btn" @click="goPrevWeek" :disabled="loading">◄</button>
-          &nbsp; &nbsp; 
-          {{ formatDate(weekData.cursorWeekStartDateTime) }} - Through - {{ formatDate(weekData.cursorWeekEndDateTime) }}
-          &nbsp; &nbsp; 
-          <button id="next-week-btn" name="next-week-btn" @click="goNextWeek" :disabled="loading">►</button>
-          <button id="print-week-btn" name="print-week-btn" v-if="userId && weekData" @click="goToPrint" class="print-button">Print</button>
+          <div class="week-nav">
+            <button
+              id="print-week-btn"
+              name="print-week-btn"
+              v-if="userId && weekData"
+              @click="goToPrint"
+              class="print-button"
+            >
+            Print Week
+            </button>
+            <div class="week-nav-controls">
+              <button
+                id="first-week-btn"
+                name="first-week-btn"
+                class="pagination-arrow"
+                @click="goToFirstWeek"
+                :disabled="loading || isAtEarliestWeek"
+                title="First Week"
+              >
+                «
+              </button>
+              <button
+                id="prev-week-btn"
+                name="prev-week-btn"
+                class="pagination-arrow"
+                @click="goPrevWeek"
+                :disabled="loading || isAtEarliestWeek"
+                title="Previous Week"
+              >
+                ‹
+              </button>
+              <span class="week-range">
+                {{ formatDate(weekData.cursorWeekStartDateTime) }} - Through - {{ formatDate(weekData.cursorWeekEndDateTime) }}
+              </span>
+              <button
+                id="next-week-btn"
+                name="next-week-btn"
+                class="pagination-arrow"
+                @click="goNextWeek"
+                :disabled="loading || isAtLatestWeek"
+                title="Next Week"
+              >
+                ›
+              </button>
+              <button
+                id="last-week-btn"
+                name="last-week-btn"
+                class="pagination-arrow"
+                @click="goToLastWeek"
+                :disabled="loading || isAtLatestWeek"
+                title="Last Week"
+              >
+                »
+              </button>
+            </div>
+          </div>
         </div>
         <div class="week-info">
           <table class="week-info-table">
@@ -1131,6 +1181,44 @@ export default {
       }
     }
 
+    const goToFirstWeek = () => {
+      if (!weekData.value?.earliestWeekStartDateTime) return
+      const cursorDateTime = calculateWeekMidpoint(weekData.value.earliestWeekStartDateTime)
+      if (cursorDateTime) {
+        router.push({
+          path: `/week/${userId.value}`,
+          query: { cursorDateTime }
+        })
+        loadWeekData(cursorDateTime)
+      }
+    }
+
+    const goToLastWeek = () => {
+      if (!weekData.value?.latestWeekStartDateTime) return
+      const cursorDateTime = calculateWeekMidpoint(weekData.value.latestWeekStartDateTime)
+      if (cursorDateTime) {
+        router.push({
+          path: `/week/${userId.value}`,
+          query: { cursorDateTime }
+        })
+        loadWeekData(cursorDateTime)
+      }
+    }
+
+    const isAtEarliestWeek = computed(() => {
+      if (!weekData.value?.cursorWeekStartDateTime || !weekData.value?.earliestWeekStartDateTime) {
+        return false
+      }
+      return weekData.value.cursorWeekStartDateTime === weekData.value.earliestWeekStartDateTime
+    })
+
+    const isAtLatestWeek = computed(() => {
+      if (!weekData.value?.cursorWeekStartDateTime || !weekData.value?.latestWeekStartDateTime) {
+        return false
+      }
+      return weekData.value.cursorWeekStartDateTime === weekData.value.latestWeekStartDateTime
+    })
+
     watch(() => route.params.userId, (newUserId) => {
       userId.value = newUserId ? parseInt(newUserId) : null
       if (userId.value) {
@@ -1703,6 +1791,10 @@ export default {
       formatDate,
       goPrevWeek,
       goNextWeek,
+      goToFirstWeek,
+      goToLastWeek,
+      isAtEarliestWeek,
+      isAtLatestWeek,
       printUrl,
       goToPrint,
       editClockEvent,
@@ -1758,14 +1850,38 @@ export default {
 }
 
 .week-navigation {
-  margin-top: 10px;
+  margin-top: 0;
   display: flex;
   align-items: center;
+  gap: 20px;
+}
+
+.week-nav {
+  border: 0;
+  padding: 0;
+  display: inline-flex;
+  align-items: stretch;
+  gap: 20px;
+}
+
+.week-nav-controls {
+  display: inline-flex;
+  align-items: stretch;
   gap: 10px;
 }
 
+.week-range {
+  font-weight: bold;
+  min-width: 280px;
+  text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 12px;
+}
+
 .week-info {
-  margin-top: 10px;
+  margin-top: 20px;
 }
 
 .week-info-table {
@@ -1826,6 +1942,40 @@ export default {
   color: white;
   border-color: #007bff;
   font-size: 14px;
+  width: 170px;
+  height: 36px;
+  padding: 8px 16px;
+  line-height: 1.2;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.week-nav-controls .pagination-arrow {
+  padding: 8px 12px;
+  cursor: pointer;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: #007bff;
+  color: white;
+  font-size: 20px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  height: 36px;
+}
+
+.week-nav-controls .pagination-arrow:hover:not(:disabled) {
+  background-color: #0056b3;
+}
+
+.week-nav-controls .pagination-arrow:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .week-navigation .print-button:hover {
