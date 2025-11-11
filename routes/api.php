@@ -26,5 +26,6 @@ Route::prefix('v1')->group(function () {
     
     // Groups CRUD
     Route::apiResource('groups', GroupController::class);
+    Route::get('/groups/column-width/groupName', [GroupController::class, 'getColumnWidth']);
 });
 

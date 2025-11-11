@@ -42,7 +42,7 @@
               {{ sortColumn === 'id' && sortDirection === 'asc' ? '↑' : '↓' }}
             </span>
           </th>
-          <th @click="sortBy('name')" class="sortable" :class="{ 'sorted-column': sortColumn === 'name' }">
+          <th @click="sortBy('name')" class="sortable name-column" :class="{ 'sorted-column': sortColumn === 'name' }">
             Name
             <span class="sort-indicator" :class="{ 'sort-indicator-visible': sortColumn === 'name' }">
               {{ sortColumn === 'name' && sortDirection === 'asc' ? '↑' : '↓' }}
@@ -69,8 +69,8 @@
         </tr>
         <tr v-for="user in paginatedUsers" :key="user.id">
           <td class="id-column" style="text-align: center;">{{ user.id }}</td>
-          <td>
-            <span>{{ user.name }}</span>
+          <td class="name-column">
+            <span class="name-text">{{ user.name }}</span>
             <button :id="`view-user-week-btn-${user.id}`" :name="`view-user-week-btn-${user.id}`" @click="viewUserWeek(user)" class="name-arrow-btn" title="View Time">▶</button>
           </td>
           <td class="code-column">{{ user.userCode }}</td>
@@ -829,6 +829,11 @@ button:hover {
 
 .company-column {
   text-align: left;
+  width: 200px;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .id-column {
@@ -839,6 +844,27 @@ button:hover {
 .code-column {
   width: 100px;
   min-width: 100px;
+}
+
+.name-column {
+  width: 200px;
+  max-width: 200px;
+  overflow: hidden;
+}
+
+.name-column .name-text {
+  display: inline-block;
+  max-width: calc(100% - 35px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.name-column .name-arrow-btn {
+  display: inline-block;
+  vertical-align: middle;
+  flex-shrink: 0;
 }
 
 .actions-column {

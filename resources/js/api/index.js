@@ -51,5 +51,6 @@ export default {
     create: (data) => apiClient.post('/groups', data),
     update: (id, data) => apiClient.put(`/groups/${id}`, data),
     delete: (id) => apiClient.delete(`/groups/${id}`),
+    getColumnWidth: () => apiClient.get('/groups/column-width/groupName'),
   },
 }

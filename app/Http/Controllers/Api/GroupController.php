@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Repositories\ClockGroupRepository;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class GroupController extends Controller
 {
@@ -22,6 +24,26 @@ class GroupController extends Controller
         return response()->json([
             'data' => $groups,
         ]);
+    }
+
+    public function getColumnWidth()
+    {
+        try {
+            $columnInfo = DB::select("SHOW COLUMNS FROM clockGroup WHERE Field = 'groupName'");
+            if (empty($columnInfo)) {
+                return response()->json(['width' => 255], 200);
+            }
+            
+            $type = $columnInfo[0]->Type;
+            // Extract length from VARCHAR(255) or similar
+            preg_match('/\((\d+)\)/', $type, $matches);
+            $width = isset($matches[1]) ? (int)$matches[1] : 255;
+            
+            return response()->json(['width' => $width]);
+        } catch (\Exception $e) {
+            // Fallback to default if query fails
+            return response()->json(['width' => 255], 200);
+        }
     }
 
     public function store(Request $request)

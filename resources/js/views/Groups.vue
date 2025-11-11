@@ -32,7 +32,7 @@
               {{ sortColumn === 'id' && sortDirection === 'asc' ? '↑' : '↓' }}
             </span>
           </th>
-          <th @click="sortBy('groupName')" class="sortable" :class="{ 'sorted-column': sortColumn === 'groupName' }">
+          <th @click="sortBy('groupName')" class="sortable company-name-column" :class="{ 'sorted-column': sortColumn === 'groupName' }">
             Company Name
             <span class="sort-indicator" :class="{ 'sort-indicator-visible': sortColumn === 'groupName' }">
               {{ sortColumn === 'groupName' && sortDirection === 'asc' ? '↑' : '↓' }}
@@ -57,8 +57,8 @@
       <tbody>
         <tr v-for="group in paginatedGroups" :key="group.id">
           <td class="id-column" style="text-align: center;">{{ group.id }}</td>
-          <td>
-            <span>{{ group.groupName }}</span>
+          <td class="company-name-column">
+            <span class="company-name-text">{{ group.groupName }}</span>
             <button :id="`view-company-btn-${group.id}`" :name="`view-company-btn-${group.id}`" @click="viewCompany(group)" class="name-arrow-btn" title="View Employees">▶</button>
           </td>
           <td class="user-count-column" style="text-align: center;">{{ getUserCount(group.id) }}</td>
@@ -80,8 +80,11 @@
         </div>
         <form @submit.prevent="saveGroup">
           <div class="form-group">
-            <label for="group-name">Group Name:</label>
-            <input id="group-name" name="group-name" ref="groupNameInput" v-model="formData.groupName" required />
+            <label for="group-name" class="label-with-error">
+              Group Name:
+              <span v-if="groupNameError" class="group-name-error">{{ groupNameError }}</span>
+            </label>
+            <input id="group-name" name="group-name" ref="groupNameInput" v-model="formData.groupName" @input="handleGroupNameInput" required />
           </div>
           <div class="form-group">
             <label for="week-start-dow">Week Start Day of Week:</label>
@@ -234,8 +237,10 @@ export default {
     const sortColumn = ref(localStorage.getItem('groupsSortColumn') || 'id')
     const sortDirection = ref(localStorage.getItem('groupsSortDirection') || 'asc')
     const groupNameInput = ref(null)
+    const groupNameError = ref('')
     const currentPage = ref(1)
     const itemsPerPage = ref(5)
+    const MAX_GROUP_NAME_LENGTH = ref(255) // Will be updated from database
     
     // Drag functionality
     const addEditModalContent = ref(null)
@@ -342,6 +347,16 @@ export default {
       }
     }
 
+    const loadColumnWidth = async () => {
+      try {
+        const response = await api.groups.getColumnWidth()
+        MAX_GROUP_NAME_LENGTH.value = response.data.width || 255
+      } catch (err) {
+        console.error('Error loading column width:', err)
+        // Keep default value of 255
+      }
+    }
+
     const loadUsers = async () => {
       try {
         const response = await api.users.getAll()
@@ -358,11 +373,13 @@ export default {
 
     const openAddForm = () => {
       resetModalPositions()
+      groupNameError.value = ''
       showAddForm.value = true
     }
     
     const editGroup = async (group) => {
       resetModalPositions()
+      groupNameError.value = ''
       editingGroup.value = group
       formData.value = {
         groupName: group.groupName,
@@ -410,7 +427,33 @@ export default {
       deletingGroup.value = null
     }
 
+    const handleGroupNameInput = () => {
+      if (formData.value.groupName && formData.value.groupName.length > MAX_GROUP_NAME_LENGTH.value) {
+        groupNameError.value = `Company name can only be ${MAX_GROUP_NAME_LENGTH.value} characters wide`
+      } else {
+        groupNameError.value = ''
+      }
+    }
+    
+    const clearGroupNameError = () => {
+      groupNameError.value = ''
+    }
+    
+    const validateGroupName = () => {
+      if (formData.value.groupName && formData.value.groupName.length > MAX_GROUP_NAME_LENGTH.value) {
+        groupNameError.value = `Company name can only be ${MAX_GROUP_NAME_LENGTH.value} characters wide`
+        return false
+      }
+      groupNameError.value = ''
+      return true
+    }
+
     const saveGroup = async () => {
+      // Validate group name length
+      if (!validateGroupName()) {
+        return
+      }
+      
       // Ensure time is set before saving
       if (!formData.value.weekStartTime) {
         updateTimeFromInputs()
@@ -891,6 +934,7 @@ export default {
     onMounted(() => {
       loadGroups()
       loadUsers()
+      loadColumnWidth()
     })
 
     return {
@@ -922,6 +966,9 @@ export default {
       sortDirection,
       getUserCount,
       groupNameInput,
+      groupNameError,
+      clearGroupNameError,
+      handleGroupNameInput,
       timeHours,
       timeMinutes,
       timeSeconds,
@@ -1125,6 +1172,27 @@ button:hover {
   min-width: 130px;
 }
 
+.company-name-column {
+  width: 200px;
+  max-width: 200px;
+  overflow: hidden;
+}
+
+.company-name-column .company-name-text {
+  display: inline-block;
+  max-width: calc(100% - 35px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.company-name-column .name-arrow-btn {
+  display: inline-block;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
 .time-form-group-wrapper {
   display: inline-block !important;
   width: auto !important;
@@ -1294,6 +1362,18 @@ button:hover {
   display: block;
   margin-bottom: 5px;
   font-weight: bold;
+}
+
+.label-with-error {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.group-name-error {
+  color: red;
+  font-weight: normal;
+  font-size: 14px;
 }
 
 .form-group input {

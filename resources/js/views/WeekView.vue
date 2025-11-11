@@ -15,11 +15,11 @@
         <div class="week-info">
           <table class="week-info-table">
             <tr>
-              <td class="name-cell">Name:</td>
+              <td class="name-cell name-cell-name">Name:</td>
               <td class="data-cell">{{ userName }}</td>
-              <td class="name-cell">Company name:</td>
+              <td class="name-cell">Company:</td>
               <td class="data-cell">{{ groupName }}</td>
-              <td class="name-cell">Start of week:</td>
+              <td class="name-cell">Week start:</td>
               <td class="data-cell">{{ weekData.clockWeekStartDOW }} - {{ weekData.clockWeekStartTime }}</td>
             </tr>
           </table>
@@ -1773,6 +1773,7 @@ export default {
   max-width: 800px;
   border-collapse: collapse;
   border: 1px solid #ccc;
+  table-layout: fixed;
 }
 
 .week-info-table td {
@@ -1783,12 +1784,22 @@ export default {
 .week-info-table .name-cell {
   text-align: right;
   padding-right: 5px;
+  padding-left: 2px;
   background-color: #f2f2f2;
   font-weight: bold;
+  width: 90px;
+  white-space: nowrap;
+}
+
+.week-info-table .name-cell-name {
+  width: 70px;
 }
 
 .week-info-table .data-cell {
   background-color: #fff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .week-navigation button {
