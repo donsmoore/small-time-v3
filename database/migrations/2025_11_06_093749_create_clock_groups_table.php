@@ -12,11 +12,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('clockGroup', function (Blueprint $table) {
-            $table->id();
-            $table->string('groupName');
-            $table->string('weekStartDOW');
-            $table->string('weekStartTime');
-            $table->timestamps();
+            $table->increments('id');
+            $table->string('groupName', 50);
+            $table->string('weekStartDOW', 20);
+            $table->string('weekStartTime', 20);
         });
     }
 

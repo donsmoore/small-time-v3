@@ -12,14 +12,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('clockEvent', function (Blueprint $table) {
-            $table->id();
-            $table->unsignedBigInteger('userId');
-            $table->enum('inOrOut', ['IN', 'OUT']);
-            $table->datetime('eventTime');
-            $table->timestamps();
-            
-            $table->index('userId');
-            $table->index('eventTime');
+            $table->increments('id');
+            $table->integer('userId');
+            $table->string('eventTime', 20);
+            $table->string('inOrOut', 5);
         });
     }
 

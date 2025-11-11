@@ -12,11 +12,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('clockUser', function (Blueprint $table) {
-            $table->id();
-            $table->string('name');
-            $table->string('userCode')->unique();
-            $table->unsignedBigInteger('groupId')->default(0);
-            $table->timestamps();
+            $table->increments('id');
+            $table->string('userCode', 10);
+            $table->integer('groupId');
+            $table->string('name', 30);
         });
     }
 
