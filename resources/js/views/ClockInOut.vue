@@ -1,21 +1,23 @@
 <template>
   <div class="clock-in-out">
-    <h2>CLOCK IN / OUT</h2>
-    <form @submit.prevent="handleClockAction">
-      <input 
-        ref="userCodeInput"
-        v-model="userCode" 
-        placeholder="Enter user code" 
-        required 
-        :disabled="loading"
-      />
-      <button type="submit" :disabled="loading">
-        {{ loading ? 'Processing...' : 'Clock In/Out' }}
-      </button>
-    </form>
-    
-    <div v-if="message" :class="messageType" class="message">
-      {{ message }}
+    <div class="login-form-container">
+      <h2>CLOCK IN / OUT</h2>
+      <form @submit.prevent="handleClockAction">
+        <input 
+          ref="userCodeInput"
+          v-model="userCode" 
+          placeholder="Enter user code" 
+          required 
+          :disabled="loading"
+        />
+        <button type="submit" :disabled="loading">
+          {{ loading ? 'Processing...' : 'Clock In/Out' }}
+        </button>
+      </form>
+      
+      <div v-if="message" :class="messageType" class="message">
+        {{ message }}
+      </div>
     </div>
   </div>
 </template>
@@ -114,12 +116,9 @@ export default {
 
 <style scoped>
 .clock-in-out {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 300px;
-  padding: 40px 20px;
+  max-width: 800px;
+  margin: 0;
+  padding: 20px;
 }
 
 h2 {
@@ -127,21 +126,27 @@ h2 {
   text-align: center;
 }
 
-form {
+.login-form-container {
+  padding: 20px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
+}
+
+form {
   margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
 }
 
 input {
-  width: 260px;
+  width: 200px;
   padding: 10px;
   font-size: 16px;
   border: 1px solid #ccc;
   border-radius: 4px;
-  box-sizing: border-box;
 }
 
 input:disabled {
@@ -150,15 +155,14 @@ input:disabled {
 }
 
 button {
-  width: 260px;
-  padding: 10px;
+  width: 200px;
+  padding: 10px 20px;
   font-size: 16px;
   background-color: #007bff;
   color: white;
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  box-sizing: border-box;
 }
 
 button:hover:not(:disabled) {
@@ -175,7 +179,6 @@ button:disabled {
   margin: 10px 0;
   border-radius: 4px;
   text-align: center;
-  max-width: 320px;
 }
 
 .success {
