@@ -17,4 +17,13 @@ require __DIR__.'/../vendor/autoload.php';
 /** @var Application $app */
 $app = require_once __DIR__.'/../bootstrap/app.php';
 
+// Strip /timeclock/v3 prefix from REQUEST_URI when using Apache Alias
+if (isset($_SERVER['REQUEST_URI']) && strpos($_SERVER['REQUEST_URI'], '/timeclock/v3') === 0) {
+    $_SERVER['REQUEST_URI'] = substr($_SERVER['REQUEST_URI'], strlen('/timeclock/v3'));
+    // Also update SCRIPT_NAME if it contains the prefix
+    if (isset($_SERVER['SCRIPT_NAME']) && strpos($_SERVER['SCRIPT_NAME'], '/timeclock/v3') === 0) {
+        $_SERVER['SCRIPT_NAME'] = substr($_SERVER['SCRIPT_NAME'], strlen('/timeclock/v3'));
+    }
+}
+
 $app->handleRequest(Request::capture());

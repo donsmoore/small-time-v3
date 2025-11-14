@@ -1235,7 +1235,9 @@ export default {
         userId: userId.value.toString(),
         cursorDateTime: weekData.value.cursorDateTime || new Date().toISOString().slice(0, 19).replace('T', ' ')
       })
-      return `/print?${params.toString()}`
+      // Include base path for subdirectory setup
+      const basePath = window.location.pathname.split('/').slice(0, 3).join('/') || '/timeclock/v3'
+      return `${basePath}/print?${params.toString()}`
     })
 
     const goToPrint = () => {
@@ -1246,8 +1248,10 @@ export default {
       }
       // Construct URL using current window location to ensure correct base
       const queryString = new URLSearchParams(params).toString()
+      // Extract base path from current location (e.g., /timeclock/v3)
+      const basePath = window.location.pathname.split('/').slice(0, 3).join('/') || '/timeclock/v3'
       const baseUrl = window.location.protocol + '//' + window.location.host
-      const url = `${baseUrl}/print?${queryString}`
+      const url = `${baseUrl}${basePath}/print?${queryString}`
       
       // Create a temporary link element and click it (works better with browser security)
       const link = document.createElement('a')
