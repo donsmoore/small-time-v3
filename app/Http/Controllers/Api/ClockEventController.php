@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Services\ClockEventService;
 use App\Repositories\ClockEventRepository;
+use App\Rules\ValidDateTime;
 use Illuminate\Http\Request;
 
 class ClockEventController extends Controller
@@ -55,7 +56,7 @@ class ClockEventController extends Controller
     {
         $request->validate([
             'userId' => 'required|exists:clockUser,id',
-            'eventTime' => 'required|date',
+            'eventTime' => ['required', 'date', new ValidDateTime()],
             'inOrOut' => 'required|in:IN,OUT',
         ]);
 
@@ -70,7 +71,7 @@ class ClockEventController extends Controller
     public function update(Request $request, $id)
     {
         $request->validate([
-            'eventTime' => 'required|date',
+            'eventTime' => ['required', 'date', new ValidDateTime()],
         ]);
 
         $clockEvent = $this->eventRepository->update($id, ['eventTime' => $request->eventTime]);

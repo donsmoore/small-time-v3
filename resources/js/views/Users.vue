@@ -177,19 +177,46 @@ export default {
     // Drag functionality
     const addEditModalContent = ref(null)
     const deleteModalContent = ref(null)
-    const dragging = ref({ active: false, type: null, startX: 0, startY: 0, offsetX: 0, offsetY: 0 })
+    const dragging = ref({ active: false, type: null, startX: 0, startY: 0, initialOffsetX: 0, initialOffsetY: 0 })
     const addEditModalStyle = ref({ transform: 'translate(0, 0)' })
     const deleteModalStyle = ref({ transform: 'translate(0, 0)' })
     
+    // Helper function to parse translate values from transform string
+    const parseTransform = (transformString) => {
+      const match = transformString.match(/translate\(([-\d.]+)px,\s*([-\d.]+)px\)/)
+      if (match) {
+        return {
+          x: parseFloat(match[1]) || 0,
+          y: parseFloat(match[2]) || 0
+        }
+      }
+      return { x: 0, y: 0 }
+    }
+    
     const startDrag = (event, modalType) => {
       event.preventDefault()
+      
+      // Get current transform values to accumulate offset
+      let currentOffsetX = 0
+      let currentOffsetY = 0
+      
+      if (modalType === 'addEdit') {
+        const currentTransform = parseTransform(addEditModalStyle.value.transform)
+        currentOffsetX = currentTransform.x
+        currentOffsetY = currentTransform.y
+      } else if (modalType === 'delete') {
+        const currentTransform = parseTransform(deleteModalStyle.value.transform)
+        currentOffsetX = currentTransform.x
+        currentOffsetY = currentTransform.y
+      }
+      
       dragging.value = {
         active: true,
         type: modalType,
         startX: event.clientX,
         startY: event.clientY,
-        offsetX: 0,
-        offsetY: 0
+        initialOffsetX: currentOffsetX,
+        initialOffsetY: currentOffsetY
       }
       document.addEventListener('mousemove', handleDrag)
       document.addEventListener('mouseup', stopDrag)
@@ -198,11 +225,12 @@ export default {
     const handleDrag = (event) => {
       if (!dragging.value.active) return
       
-      const offsetX = event.clientX - dragging.value.startX
-      const offsetY = event.clientY - dragging.value.startY
+      // Calculate new offset from mouse movement and add to initial offset
+      const deltaX = event.clientX - dragging.value.startX
+      const deltaY = event.clientY - dragging.value.startY
       
-      dragging.value.offsetX = offsetX
-      dragging.value.offsetY = offsetY
+      const offsetX = dragging.value.initialOffsetX + deltaX
+      const offsetY = dragging.value.initialOffsetY + deltaY
       
       const style = { transform: `translate(${offsetX}px, ${offsetY}px)` }
       

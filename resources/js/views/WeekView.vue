@@ -235,6 +235,9 @@
             <button id="save-add-event-btn" name="save-add-event-btn" type="submit" :disabled="saving">{{ saving ? 'Saving...' : 'Save' }}</button>
             <button id="cancel-add-event-btn" name="cancel-add-event-btn" type="button" @click="closeAddModal">Cancel</button>
           </div>
+          <div v-if="addError" class="error-box">
+            {{ addError }}
+          </div>
         </form>
       </div>
     </div>
@@ -339,6 +342,9 @@
             <button id="save-edit-event-btn" name="save-edit-event-btn" type="submit" :disabled="saving">{{ saving ? 'Saving...' : 'Save' }}</button>
             <button id="cancel-edit-event-btn" name="cancel-edit-event-btn" type="button" @click="closeEditModal">Cancel</button>
           </div>
+          <div v-if="editError" class="error-box">
+            {{ editError }}
+          </div>
         </form>
       </div>
     </div>
@@ -383,6 +389,8 @@ export default {
     const editingEvent = ref(null)
     const deletingEvent = ref(null)
     const saving = ref(false)
+    const addError = ref('')
+    const editError = ref('')
     const formData = ref({
       eventDate: '',
       eventTime: '',
@@ -404,20 +412,51 @@ export default {
     const addModalContent = ref(null)
     const editModalContent = ref(null)
     const deleteModalContent = ref(null)
-    const dragging = ref({ active: false, type: null, startX: 0, startY: 0, offsetX: 0, offsetY: 0 })
+    const dragging = ref({ active: false, type: null, startX: 0, startY: 0, initialOffsetX: 0, initialOffsetY: 0 })
     const addModalStyle = ref({ transform: 'translate(0, 0)' })
     const editModalStyle = ref({ transform: 'translate(0, 0)' })
     const deleteModalStyle = ref({ transform: 'translate(0, 0)' })
     
+    // Helper function to parse translate values from transform string
+    const parseTransform = (transformString) => {
+      const match = transformString.match(/translate\(([-\d.]+)px,\s*([-\d.]+)px\)/)
+      if (match) {
+        return {
+          x: parseFloat(match[1]) || 0,
+          y: parseFloat(match[2]) || 0
+        }
+      }
+      return { x: 0, y: 0 }
+    }
+    
     const startDrag = (event, modalType) => {
       event.preventDefault()
+      
+      // Get current transform values to accumulate offset
+      let currentOffsetX = 0
+      let currentOffsetY = 0
+      
+      if (modalType === 'add') {
+        const currentTransform = parseTransform(addModalStyle.value.transform)
+        currentOffsetX = currentTransform.x
+        currentOffsetY = currentTransform.y
+      } else if (modalType === 'edit') {
+        const currentTransform = parseTransform(editModalStyle.value.transform)
+        currentOffsetX = currentTransform.x
+        currentOffsetY = currentTransform.y
+      } else if (modalType === 'delete') {
+        const currentTransform = parseTransform(deleteModalStyle.value.transform)
+        currentOffsetX = currentTransform.x
+        currentOffsetY = currentTransform.y
+      }
+      
       dragging.value = {
         active: true,
         type: modalType,
         startX: event.clientX,
         startY: event.clientY,
-        offsetX: 0,
-        offsetY: 0
+        initialOffsetX: currentOffsetX,
+        initialOffsetY: currentOffsetY
       }
       document.addEventListener('mousemove', handleDrag)
       document.addEventListener('mouseup', stopDrag)
@@ -426,11 +465,12 @@ export default {
     const handleDrag = (event) => {
       if (!dragging.value.active) return
       
-      const offsetX = event.clientX - dragging.value.startX
-      const offsetY = event.clientY - dragging.value.startY
+      // Calculate new offset from mouse movement and add to initial offset
+      const deltaX = event.clientX - dragging.value.startX
+      const deltaY = event.clientY - dragging.value.startY
       
-      dragging.value.offsetX = offsetX
-      dragging.value.offsetY = offsetY
+      const offsetX = dragging.value.initialOffsetX + deltaX
+      const offsetY = dragging.value.initialOffsetY + deltaY
       
       const style = { transform: `translate(${offsetX}px, ${offsetY}px)` }
       
@@ -577,11 +617,9 @@ export default {
           currentPair.whenIn = formatDateTime(event.eventTime)
           currentPair.inId = event.id
           
-          // Check if this is the last valid event and it's an end transition
-          const validInIndex = validEvents.findIndex(e => e.id === event.id && e.inOrOut === 'IN')
-          if (validInIndex === validEvents.length - 1 && isEndTransition) {
-            currentPair.inId = -2 // End of week transition
-          }
+          // Note: Don't mark real event IDs as -2 for end transitions
+          // The -2 should only be used for virtual/transitional pairs, not real events
+          // Real events should keep their original ID
         } else if (event.inOrOut === 'OUT') {
           // Check if this is the first valid OUT event and it's a beginning transition
           // Find the index of this event in the validEvents array
@@ -664,11 +702,9 @@ export default {
           const virtualClockOut = formatDateTime(weekData?.cursorWeekEndDateTime)
           if (virtualClockOut && virtualClockOut !== '---') {
             currentPair.whenOut = virtualClockOut
-            currentPair.outId = -2 // Mark as end transition
-            // Ensure inId is also marked as transition
-            if (currentPair.inId !== -2) {
-              currentPair.inId = -2
-            }
+            currentPair.outId = -2 // Mark virtual clock out as end transition
+            // Keep the real event ID for inId - don't mark real events as -2
+            // Only use -2 for virtual/transitional events, not real clock in events
             // Calculate time worked using the virtual clock out
             const timeData = calculateTimeData(currentPair.whenIn, currentPair.whenOut)
             row++
@@ -692,7 +728,7 @@ export default {
             row++
             weekTimeData.push({
               row: row,
-              inId: currentPair.inId === -2 ? -2 : (currentPair.inId || -2),
+              inId: currentPair.inId || 0, // Keep real event ID, don't override with -2
               whenIn: currentPair.whenIn,
               outId: -2,
               whenOut: fallbackWeekEnd,
@@ -767,11 +803,9 @@ export default {
           currentPair.inTime = formatDateTime(event.eventTime)
           currentPair.inId = event.id
           
-          // Check if this is the last valid event and it's an end transition
-          const validInIndex = validEvents.findIndex(e => e.id === event.id && e.inOrOut === 'IN')
-          if (validInIndex === validEvents.length - 1 && isEndTransition) {
-            currentPair.inId = -2 // End of week transition
-          }
+          // Note: Don't mark real event IDs as -2 for end transitions
+          // The -2 should only be used for virtual/transitional pairs, not real events
+          // Real events (like event.id = 153) should keep their original ID so buttons show
         } else if (event.inOrOut === 'OUT') {
           // Check if this is the first valid OUT event and it's a beginning transition
           // Find the index of this event in the validEvents array
@@ -834,11 +868,9 @@ export default {
           const virtualClockOut = formatDateTime(weekData?.cursorWeekEndDateTime)
           if (virtualClockOut && virtualClockOut !== '---') {
             currentPair.outTime = virtualClockOut
-            currentPair.outId = -2 // Mark as end transition
-            // Ensure inId is also marked as transition
-            if (currentPair.inId !== -2) {
-              currentPair.inId = -2
-            }
+            currentPair.outId = -2 // Mark virtual clock out as end transition
+            // Keep the real event ID for inId - don't mark real events as -2
+            // Only use -2 for virtual/transitional events, not real clock in events
             // Calculate time worked using the virtual clock out
             const timeData = calculateTimeData(currentPair.inTime, currentPair.outTime)
             pairs.push({
@@ -852,17 +884,22 @@ export default {
               '---'
             pairs.push({
               ...currentPair,
-              inId: currentPair.inId === -2 ? -2 : (currentPair.inId || -2),
+              inId: currentPair.inId || 0, // Keep real event ID, don't override with -2
               outTime: fallbackWeekEnd,
-              outId: -2,
+              outId: -2, // Virtual clock out is -2
               timeWorked: fallbackWeekEnd !== '---' ? calculateTimeWorked(currentPair.inTime, fallbackWeekEnd) : '---'
             })
           }
         } else {
+          // Handle last IN without OUT (not an end transition)
+          // Ensure inId is explicitly set - it should be from event.id if we have inTime
+          // Explicitly include inId in the object to ensure it's always present
           pairs.push({ 
-            ...currentPair, 
+            ...currentPair,
+            inId: currentPair.inId, // Explicitly include inId - should be set from event.id at line 800
             inTime: currentPair.inId === 0 ? '????-??-?? ??:??:??' : currentPair.inTime,
-            outTime: '????-??-?? ??:??:??', 
+            outTime: '????-??-?? ??:??:??',
+            outId: 0,
             timeWorked: '---' 
           })
         }
@@ -1568,6 +1605,7 @@ export default {
 
     const editClockEvent = async (eventId, type, displayedTime = null) => {
       resetModalPositions()
+      editError.value = '' // Clear any previous errors
       // Find the event in the current week data
       const event = weekData.value?.events?.find(e => e.id === eventId)
       
@@ -1606,8 +1644,9 @@ export default {
 
     const addClockEvent = async (event, type) => {
       resetModalPositions()
+      addError.value = '' // Clear any previous errors
       if (!userId.value) {
-        alert('User ID is missing')
+        addError.value = 'User ID is missing'
         return
       }
       
@@ -1671,6 +1710,7 @@ export default {
     const saveEditEvent = async () => {
       if (!editingEvent.value) return
       
+      editError.value = '' // Clear any previous errors
       saving.value = true
       try {
         const eventTime = convertTo24HourFormat()
@@ -1681,7 +1721,7 @@ export default {
         console.error('Error updating clock event:', err)
         const errorMsg = err.response?.data?.error || err.response?.data?.message || err.message || 'Unknown error'
         const statusCode = err.response?.status || 'N/A'
-        alert(`Error updating clock event (${statusCode}): ${errorMsg}`)
+        editError.value = `Error updating clock event (${statusCode}): ${errorMsg}`
       } finally {
         saving.value = false
       }
@@ -1689,10 +1729,11 @@ export default {
 
     const saveAddEvent = async () => {
       if (!userId.value) {
-        alert('User ID is missing')
+        addError.value = 'User ID is missing'
         return
       }
       
+      addError.value = '' // Clear any previous errors
       saving.value = true
       try {
         const eventTime = convertTo24HourFormat()
@@ -1709,7 +1750,7 @@ export default {
         console.error('Error adding clock event:', err)
         const errorMsg = err.response?.data?.error || err.response?.data?.message || err.message || 'Unknown error'
         const statusCode = err.response?.status || 'N/A'
-        alert(`Error adding clock event (${statusCode}): ${errorMsg}`)
+        addError.value = `Error adding clock event (${statusCode}): ${errorMsg}`
       } finally {
         saving.value = false
       }
@@ -1732,6 +1773,7 @@ export default {
 
     const closeAddModal = () => {
       showAddModal.value = false
+      addError.value = '' // Clear errors when closing
       formData.value.eventDate = ''
       formData.value.eventTime = ''
       formData.value.type = 'in'
@@ -1746,6 +1788,7 @@ export default {
 
     const closeEditModal = () => {
       editingEvent.value = null
+      editError.value = '' // Clear errors when closing
       formData.value.eventDate = ''
       formData.value.eventTime = ''
       formData.value.type = 'in'
@@ -1808,6 +1851,8 @@ export default {
       editingEvent,
       deletingEvent,
       saving,
+      addError,
+      editError,
       formData,
       eventTimeInput,
       eventDateInput,
@@ -2145,7 +2190,8 @@ export default {
   background-color: white;
   padding: 20px;
   border-radius: 8px;
-  max-width: 500px;
+  max-width: 600px;
+  min-width: 500px;
   width: 90%;
   max-height: 90vh;
   overflow-y: auto;
@@ -2241,6 +2287,18 @@ export default {
 
 .form-actions button[type="button"]:hover {
   background-color: #5a6268;
+}
+
+.error-box {
+  margin-top: 15px;
+  padding: 10px;
+  border: 1px solid #dc3545;
+  border-radius: 4px;
+  background-color: #fff5f5;
+  color: #dc3545;
+  font-size: 14px;
+  line-height: 1.4;
+  text-align: left;
 }
 
 .form-actions button:disabled {
