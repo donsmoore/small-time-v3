@@ -27,11 +27,11 @@
     <table class="timesheet-table">
       <thead>
         <tr>
-          <th>#</th>
-          <th>Day</th>
-          <th>Clock In</th>
-          <th>Clock Out</th>
-          <th>Time Worked</th>
+          <th class="index-col">#</th>
+          <th class="day-col">Day</th>
+          <th class="time-col">Clock In</th>
+          <th class="time-col">Clock Out</th>
+          <th class="worked-col">Time Worked</th>
         </tr>
       </thead>
       <tbody>
@@ -42,7 +42,7 @@
         </tr>
         <tr v-for="(event, index) in events" :key="index">
           <td>{{ index + 1 }}</td>
-          <td>{{ getDayOfWeek(event.inTime) }}</td>
+          <td>{{ getDayOfWeek(event.inTimeRaw) }}</td>
           <td>{{ event.inTime }}</td>
           <td>{{ event.outTime }}</td>
           <td class="time-right">{{ event.timeWorked }}</td>
@@ -109,8 +109,8 @@ export default {
       }
       
       try {
-        const date = parseDateTime12Hour(dateTime)
-        if (!date) return '---'
+        const date = new Date(dateTime)
+        if (isNaN(date.getTime())) return '---'
         const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
         return days[date.getDay()]
       } catch (e) {
@@ -118,34 +118,41 @@ export default {
       }
     }
 
+    const getOrdinal = (n) => {
+      const s = ["th", "st", "nd", "rd"];
+      const v = n % 100;
+      return n + (s[(v - 20) % 10] || s[v] || s[0]);
+    }
+
     const formatDateTime = (dateTime) => {
       if (!dateTime || dateTime === '---') return '---'
       const date = new Date(dateTime)
-      const year = date.getFullYear()
-      const month = String(date.getMonth() + 1).padStart(2, '0')
-      const day = String(date.getDate()).padStart(2, '0')
+      
+      const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+      const monthName = months[date.getMonth()]
+      const day = getOrdinal(date.getDate())
       
       // Convert to 12-hour format
       let hours = date.getHours()
-      const ampm = hours >= 12 ? 'PM' : 'AM'
+      const ampm = hours >= 12 ? 'pm' : 'am'
       hours = hours % 12
       hours = hours ? hours : 12 // the hour '0' should be '12'
       const minutes = String(date.getMinutes()).padStart(2, '0')
-      const seconds = String(date.getSeconds()).padStart(2, '0')
       
-      return `${year}-${month}-${day} ${String(hours).padStart(2, '0')}:${minutes}:${seconds} ${ampm}`
+      return `${monthName} ${day} ${hours}:${minutes}${ampm}`
     }
 
     const exceeds24Hours = (inTime, outTime) => {
+      // input is now raw string
       if (!inTime || !outTime || inTime === '---' || outTime === '---') {
         return false
       }
       
       try {
-        const inDate = parseDateTime12Hour(inTime)
-        const outDate = parseDateTime12Hour(outTime)
+        const inDate = new Date(inTime)
+        const outDate = new Date(outTime)
         
-        if (!inDate || !outDate) return false
+        if (isNaN(inDate.getTime()) || isNaN(outDate.getTime())) return false
         
         const diffMs = outDate - inDate
         const diffSec = Math.floor(diffMs / 1000)
@@ -175,44 +182,44 @@ export default {
       if (!events || events.length === 0) return []
       
       const pairs = []
-      let currentPair = { inTime: '', outTime: '', inId: null, outId: null }
+      let currentPair = { inTimeRaw: null, outTimeRaw: null, inId: null, outId: null }
       
       // Filter out events with empty/null inOrOut values
       const validEvents = events.filter(e => e.inOrOut && (e.inOrOut === 'IN' || e.inOrOut === 'OUT'))
       
       // Check for beginning of week transition
-      // Requirements: First valid event in week is OUT AND last event before week start is IN
       const eventBeforeWeekStart = weekData?.eventBeforeWeekStart
       const firstValidEvent = validEvents.length > 0 ? validEvents[0] : null
       const isBeginningTransition = firstValidEvent && 
-                                    firstValidEvent.inOrOut === 'OUT' && // First valid event in week must be OUT
+                                    firstValidEvent.inOrOut === 'OUT' && 
                                     eventBeforeWeekStart && 
-                                    eventBeforeWeekStart.inOrOut === 'IN' && // Last event before week start must be IN
+                                    eventBeforeWeekStart.inOrOut === 'IN' && 
                                     isWithin24Hours(eventBeforeWeekStart.eventTime, firstValidEvent.eventTime)
       
       // Check for end of week transition
-      // Requirements: Last valid event in week is IN AND first event after week end is OUT
       const eventAfterWeekEnd = weekData?.eventAfterWeekEnd
       const lastValidEvent = validEvents.length > 0 ? validEvents[validEvents.length - 1] : null
       const isEndTransition = lastValidEvent && 
-                              lastValidEvent.inOrOut === 'IN' && // Last valid event in week must be IN
+                              lastValidEvent.inOrOut === 'IN' && 
                               eventAfterWeekEnd && 
-                              eventAfterWeekEnd.inOrOut === 'OUT' && // First event after week end must be OUT
+                              eventAfterWeekEnd.inOrOut === 'OUT' && 
                               isWithin24Hours(lastValidEvent.eventTime, eventAfterWeekEnd.eventTime)
       
       events.forEach((event, index) => {
         if (event.inOrOut === 'IN') {
-          if (currentPair.inTime) {
+          if (currentPair.inTimeRaw) {
             // Start new pair if we already have an IN
             pairs.push({ 
               ...currentPair, 
-              inTime: currentPair.inId === 0 ? '????-??-?? ??:??:??' : currentPair.inTime,
-              outTime: (!currentPair.outTime || currentPair.outId === 0 || currentPair.outId === null) ? '????-??-?? ??:??:??' : currentPair.outTime, 
+              inTime: currentPair.inId === 0 ? '????-??-?? ??:??:??' : formatDateTime(currentPair.inTimeRaw),
+              outTime: (!currentPair.outTimeRaw || currentPair.outId === 0 || currentPair.outId === null) ? '????-??-?? ??:??:??' : formatDateTime(currentPair.outTimeRaw),
+              inTimeRaw: currentPair.inTimeRaw,
+              outTimeRaw: currentPair.outTimeRaw,
               timeWorked: '---' 
             })
-            currentPair = { inTime: '', outTime: '', inId: null, outId: null }
+            currentPair = { inTimeRaw: null, outTimeRaw: null, inId: null, outId: null }
           }
-          currentPair.inTime = formatDateTime(event.eventTime)
+          currentPair.inTimeRaw = event.eventTime
           currentPair.inId = event.id
           
           // Check if this is the last valid event and it's an end transition
@@ -222,31 +229,32 @@ export default {
           }
         } else if (event.inOrOut === 'OUT') {
           // Check if this is the first valid OUT event and it's a beginning transition
-          // Find the index of this event in the validEvents array
           const validOutIndex = validEvents.findIndex(e => e.id === event.id && e.inOrOut === 'OUT')
-          if (validOutIndex === 0 && isBeginningTransition && !currentPair.inTime) {
+          if (validOutIndex === 0 && isBeginningTransition && !currentPair.inTimeRaw) {
             currentPair.inId = -1 // Beginning of week transition (virtual clock in)
             // Use the week start date/time as the virtual clock in
-            currentPair.inTime = formatDateTime(weekData?.cursorWeekStartDateTime || '')
+            currentPair.inTimeRaw = weekData?.cursorWeekStartDateTime || ''
           }
           
           // If we don't have an IN yet, this shouldn't happen normally, but handle it
-          if (!currentPair.inTime) {
-            currentPair.inTime = '????-??-?? ??:??:??' // Missing IN
+          if (!currentPair.inTimeRaw) {
+            currentPair.inTimeRaw = null // Missing IN
             currentPair.inId = 0
           }
           
-          currentPair.outTime = formatDateTime(event.eventTime)
+          currentPair.outTimeRaw = event.eventTime
           currentPair.outId = event.id
           
           // Check if the time difference exceeds 24 hours
-          if (exceeds24Hours(currentPair.inTime, currentPair.outTime)) {
+          if (exceeds24Hours(currentPair.inTimeRaw, currentPair.outTimeRaw)) {
             // Split into two entries: IN with missing OUT, then missing IN with OUT
             // First entry: Clock In with missing Clock Out
             pairs.push({
-              inTime: currentPair.inId === 0 ? '????-??-?? ??:??:??' : currentPair.inTime,
+              inTime: currentPair.inId === 0 ? '????-??-?? ??:??:??' : formatDateTime(currentPair.inTimeRaw),
+              inTimeRaw: currentPair.inTimeRaw,
               inId: currentPair.inId,
               outTime: '????-??-?? ??:??:??',
+              outTimeRaw: null,
               outId: 0,
               timeWorked: '---'
             })
@@ -254,8 +262,10 @@ export default {
             // Second entry: Missing Clock In with Clock Out
             pairs.push({
               inTime: '????-??-?? ??:??:??',
+              inTimeRaw: null,
               inId: 0,
-              outTime: currentPair.outTime,
+              outTime: formatDateTime(currentPair.outTimeRaw),
+              outTimeRaw: currentPair.outTimeRaw,
               outId: currentPair.outId,
               timeWorked: '---'
             })
@@ -263,33 +273,39 @@ export default {
             // Normal pair within 24 hours
             pairs.push({ 
               ...currentPair, 
-              inTime: currentPair.inId === 0 ? '????-??-?? ??:??:??' : currentPair.inTime,
-              outTime: currentPair.outId === 0 ? '????-??-?? ??:??:??' : currentPair.outTime,
-              timeWorked: calculateTimeWorked(currentPair.inTime, currentPair.outTime) 
+              inTime: currentPair.inId === 0 ? '????-??-?? ??:??:??' : formatDateTime(currentPair.inTimeRaw),
+              outTime: currentPair.outId === 0 ? '????-??-?? ??:??:??' : formatDateTime(currentPair.outTimeRaw),
+              inTimeRaw: currentPair.inTimeRaw,
+              outTimeRaw: currentPair.outTimeRaw,
+              timeWorked: calculateTimeWorked(currentPair.inTimeRaw, currentPair.outTimeRaw) 
             })
           }
           
-          currentPair = { inTime: '', outTime: '', inId: null, outId: null }
+          currentPair = { inTimeRaw: null, outTimeRaw: null, inId: null, outId: null }
         }
       })
       
       // Handle last IN without OUT
-      if (currentPair.inTime) {
+      if (currentPair.inTimeRaw) {
         // Check if this is an end transition (last event is IN and there's an OUT after week end)
         if (isEndTransition && currentPair.inId === -2) {
           // Use the week end date/time as the virtual clock out
-          currentPair.outTime = formatDateTime(weekData?.cursorWeekEndDateTime || '')
+          currentPair.outTimeRaw = weekData?.cursorWeekEndDateTime || ''
           currentPair.outId = -2 // Mark as end transition
           // Calculate time worked using the virtual clock out
           pairs.push({
             ...currentPair,
-            timeWorked: calculateTimeWorked(currentPair.inTime, currentPair.outTime)
+            inTime: formatDateTime(currentPair.inTimeRaw),
+            outTime: formatDateTime(currentPair.outTimeRaw),
+            timeWorked: calculateTimeWorked(currentPair.inTimeRaw, currentPair.outTimeRaw)
           })
         } else {
           pairs.push({ 
             ...currentPair, 
-            inTime: currentPair.inId === 0 ? '????-??-?? ??:??:??' : currentPair.inTime,
+            inTime: currentPair.inId === 0 ? '????-??-?? ??:??:??' : formatDateTime(currentPair.inTimeRaw),
             outTime: '---', 
+            inTimeRaw: currentPair.inTimeRaw,
+            outTimeRaw: null,
             timeWorked: '---' 
           })
         }
@@ -299,13 +315,14 @@ export default {
     }
 
     const calculateTimeWorked = (inTime, outTime) => {
-      if (inTime === '---' || outTime === '---') return '---'
+      // Input is now raw ISO string or similar
+      if (!inTime || !outTime || inTime === '---' || outTime === '---') return '---'
       
       try {
-        const inDate = parseDateTime12Hour(inTime)
-        const outDate = parseDateTime12Hour(outTime)
+        const inDate = new Date(inTime)
+        const outDate = new Date(outTime)
         
-        if (!inDate || !outDate) return '---'
+        if (isNaN(inDate.getTime()) || isNaN(outDate.getTime())) return '---'
         
         const diffMs = outDate - inDate
         
@@ -505,6 +522,27 @@ export default {
 
 .time-right {
   text-align: right;
+}
+
+/* Column Widths */
+.index-col {
+  width: 40px;
+  text-align: center;
+}
+
+.day-col {
+  width: 120px;
+}
+
+.time-col {
+  width: 160px;
+  white-space: nowrap;
+}
+
+.worked-col {
+  width: 150px;
+  text-align: right;
+  white-space: nowrap;
 }
 
 .total-row {

@@ -8,14 +8,14 @@ set -e  # Exit on error
 echo "🚀 Starting deployment..."
 
 # Navigate to application directory
-cd /var/www/html/donsmoore.com/timeclock/v3
+cd /var/www/html/timeclock/v3
 
 # Fix Git ownership and permissions (if needed)
 echo "🔧 Fixing Git permissions..."
 CURRENT_USER=$(whoami)
 # Fix ownership of entire directory temporarily for git operations
 sudo chown -R $CURRENT_USER:$CURRENT_USER .
-git config --global --add safe.directory /var/www/html/donsmoore.com/timeclock/v3
+git config --global --add safe.directory /var/www/html/timeclock/v3
 
 # Pull latest changes from GitHub
 echo "📥 Pulling latest changes from GitHub..."
