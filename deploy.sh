@@ -7,15 +7,26 @@ set -e  # Exit on error
 
 echo "🚀 Starting deployment..."
 
+echo "🚀 Starting deployment..."
+
+# Determine environment and set path
+if [ -d "/var/www/html/donsmoore.com" ]; then
+    APP_ROOT="/var/www/html/donsmoore.com/timeclock/v3"
+    echo "🌍 Detected Production Environment"
+else
+    APP_ROOT="/var/www/html/timeclock/v3"
+    echo "💻 Detected Local Environment"
+fi
+
 # Navigate to application directory
-cd /var/www/html/timeclock/v3
+cd $APP_ROOT
 
 # Fix Git ownership and permissions (if needed)
 echo "🔧 Fixing Git permissions..."
 CURRENT_USER=$(whoami)
 # Fix ownership of entire directory temporarily for git operations
 sudo chown -R $CURRENT_USER:$CURRENT_USER .
-git config --global --add safe.directory /var/www/html/timeclock/v3
+git config --global --add safe.directory $APP_ROOT
 
 # Pull latest changes from GitHub
 echo "📥 Pulling latest changes from GitHub..."
