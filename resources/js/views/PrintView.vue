@@ -31,7 +31,7 @@
           <th class="day-col">Day</th>
           <th class="time-col">Clock In</th>
           <th class="time-col">Clock Out</th>
-          <th class="worked-col">Time Worked</th>
+          <th class="worked-col">Time Worked<br><span style="font-size: 0.8em">HH:MM:SS</span></th>
         </tr>
       </thead>
       <tbody>
@@ -333,7 +333,7 @@ export default {
         const minutes = Math.floor((diffSec % 3600) / 60)
         const seconds = diffSec % 60
         
-        return `${String(hours).padStart(2, '0')} Hrs  ${String(minutes).padStart(2, '0')} Min  ${String(seconds).padStart(2, '0')} Sec`
+        return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
       } catch (e) {
         return '---'
       }
@@ -366,9 +366,9 @@ export default {
       let totalSeconds = 0
       events.value.forEach(event => {
         if (event.timeWorked !== '---') {
-          const match = event.timeWorked.match(/(\d+) Hrs.*?(\d+) Min.*?(\d+) Sec/)
-          if (match) {
-            totalSeconds += parseInt(match[1]) * 3600 + parseInt(match[2]) * 60 + parseInt(match[3])
+          const parts = event.timeWorked.split(':')
+          if (parts.length === 3) {
+            totalSeconds += parseInt(parts[0]) * 3600 + parseInt(parts[1]) * 60 + parseInt(parts[2])
           }
         }
       })
@@ -377,7 +377,7 @@ export default {
       const minutes = Math.floor((totalSeconds % 3600) / 60)
       const seconds = totalSeconds % 60
       
-      return `${String(hours).padStart(2, '0')} Hrs  ${String(minutes).padStart(2, '0')} Min  ${String(seconds).padStart(2, '0')} Sec`
+      return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
     })
 
     const loadPrintData = async () => {
